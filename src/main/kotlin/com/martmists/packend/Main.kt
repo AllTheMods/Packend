@@ -1,24 +1,30 @@
 package com.martmists.packend
 
-import com.fasterxml.jackson.core.util.*
-import com.fasterxml.jackson.databind.*
+import com.fasterxml.jackson.core.util.DefaultIndenter
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
+import com.fasterxml.jackson.databind.SerializationFeature
 import com.martmists.packend.extensions.assertFound
 import com.martmists.packend.tools.Verify
-import io.ktor.application.*
-import io.ktor.features.*
+import io.ktor.application.call
+import io.ktor.application.install
+import io.ktor.features.ContentNegotiation
 import io.ktor.http.HttpStatusCode
 import io.ktor.jackson.jackson
 import io.ktor.request.receiveText
-import io.ktor.response.*
-import io.ktor.routing.*
-import io.ktor.server.engine.*
-import io.ktor.server.netty.*
+import io.ktor.response.respond
+import io.ktor.response.respondBytes
+import io.ktor.response.respondRedirect
+import io.ktor.routing.get
+import io.ktor.routing.post
+import io.ktor.routing.routing
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.netty.Netty
 import org.json.JSONObject
-import java.io.*
-import java.util.zip.*
+import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.FileOutputStream
 import java.util.zip.ZipEntry
-
+import java.util.zip.ZipOutputStream
 
 
 fun main(args: Array<String>) {
@@ -60,7 +66,7 @@ fun main(args: Array<String>) {
                 }
             }
 
-            get("/api/{pack}/{version}/modpack.zip"){
+            get("/api/{pack}/{version}/modpack.zip") {
                 val pack = call.parameters["pack"]
                 var version = call.parameters["version"]
 
@@ -95,7 +101,7 @@ fun main(args: Array<String>) {
                 if (verifier.validate(call)) {
                     val text = call.receiveText()
                     val json = JSONObject(text)
-                    if (json["action"] == "published"){
+                    if (json["action"] == "published") {
                         val release = json["release"] as JSONObject
                         val repo = json["repository"] as JSONObject
                         val version = release["tag_name"]

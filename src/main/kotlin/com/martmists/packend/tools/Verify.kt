@@ -7,7 +7,7 @@ import javax.crypto.spec.SecretKeySpec
 import javax.xml.bind.DatatypeConverter
 
 class Verify(key: String) {
-    private val hasher = Mac.getInstance("HmacSHA1").apply{
+    private val hasher = Mac.getInstance("HmacSHA1").apply {
         init(SecretKeySpec(key.toByteArray(), "HmacSHA1"))
     }
 
