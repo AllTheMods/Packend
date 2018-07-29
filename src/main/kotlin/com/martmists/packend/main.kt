@@ -16,17 +16,14 @@ import io.ktor.server.netty.*
 import org.json.JSONObject
 import java.io.*
 import java.util.zip.*
-import com.sun.xml.internal.ws.streaming.XMLStreamReaderUtil.close
 import java.io.FileOutputStream
 import java.util.zip.ZipEntry
-import java.util.zip.ZipInputStream
-import java.io.FileInputStream
 
 
 
 fun main(args: Array<String>) {
-    val jsonc = JSONObject("config.json")
-    val conf = Config(jsonc["key"] as String, jsonc["packs"] as Map<String, String>)
+    val jsonc = JSONObject(File("config.json").readText())
+    val conf = Config(jsonc["key"] as String, jsonc["packs"] as JSONObject)
     val verifier = Verify(conf.key)
 
     embeddedServer(Netty, 4000) {
@@ -49,7 +46,7 @@ fun main(args: Array<String>) {
             get("/api/{pack}/versions") {
                 val pack = call.parameters["pack"]
                 if (call.assertFound("packs/$pack")) {
-                    val packs = File("packs/$pack").listFiles().map { it.name }
+                    val packs = File("packs/$pack").listFiles().map { it.name } + listOf("latest", "experimental")
                     call.respond(mapOf("versions" to packs))
                 }
             }
@@ -65,8 +62,16 @@ fun main(args: Array<String>) {
 
             get("/api/{pack}/{version}/modpack.zip"){
                 val pack = call.parameters["pack"]
-                val version = call.parameters["version"]
+                var version = call.parameters["version"]
 
+                when (version) {
+                    "experimental" -> {
+                        call.respondRedirect("${conf.packs.get(pack)}/archive/master.zip", true)
+                    }
+                    "latest" -> {
+                        version = File("packs/$pack").listFiles().map { it.name }.sortedDescending().first()
+                    }
+                }
                 if (call.assertFound("packs/$pack/$version")) {
                     val baos = ByteArrayOutputStream()
                     val zipfile = ZipOutputStream(baos)
@@ -99,7 +104,7 @@ fun main(args: Array<String>) {
                         val zip = DownloadManager.downloadZip("${repo["html_url"]}/archive/$branch.zip")
                         var ze: ZipEntry? = zip.nextEntry
                         while (ze != null) {
-                            println("Unzipping " + ze!!.name)
+                            println("Unzipping " + ze.name)
                             val out = FileOutputStream("packs/$name/$version/${ze.name}")
                             var c = zip.read()
                             while (c != -1) {

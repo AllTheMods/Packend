@@ -6,7 +6,10 @@ import io.ktor.response.respond
 import java.io.File
 
 suspend fun ApplicationCall.assertFound(path: String): Boolean {
-    val e = File(path.replace("..", ".")).exists()
+    var p = path
+    while (p.contains(".."))
+        p = p.replace("..", ".")
+    val e = File(p).exists()
     if (!e)
         respond(HttpStatusCode.NotFound)
 
