@@ -6,7 +6,7 @@ import okhttp3.Response
 import java.util.zip.ZipInputStream
 
 object DownloadManager {
-    val http = OkHttpClient()
+    private val http = OkHttpClient()
     fun get(url: String): Response {
         return http.newCall(Request.Builder().apply {
             get()
