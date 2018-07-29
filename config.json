@@ -1,0 +1,7 @@
+{
+  "key": "tester",
+  "packs": {
+    "ATM-3": "https://github.com/AllTheMods/ATM-3",
+    "ATM-Remix": "https://github.com/AllTheMods/Remix"
+  }
+}
