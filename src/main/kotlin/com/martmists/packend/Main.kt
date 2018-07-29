@@ -34,6 +34,7 @@ fun main(args: Array<String>) {
 
     embeddedServer(Netty, 4000) {
         install(ContentNegotiation) {
+            // JSON output
             jackson {
                 configure(SerializationFeature.INDENT_OUTPUT, true)
                 setDefaultPrettyPrinter(DefaultPrettyPrinter().apply {
@@ -45,12 +46,15 @@ fun main(args: Array<String>) {
 
         routing {
             get("/api/packs") {
+                // Return all packs
                 val packs = File("packs").listFiles().map { it.name }
                 call.respond(mapOf("packs" to packs))
             }
 
             get("/api/{pack}/versions") {
                 val pack = call.parameters["pack"]
+
+                // Return all versions of a pack
                 if (call.assertFound("packs/$pack")) {
                     val packs = File("packs/$pack").listFiles().map { it.name } + listOf("latest", "experimental")
                     call.respond(mapOf("versions" to packs))
@@ -61,6 +65,7 @@ fun main(args: Array<String>) {
                 val pack = call.parameters["pack"]
                 val version = call.parameters["version"]
 
+                // Return Manifest file for selected pack and version
                 if (call.assertFound("packs/$pack/$version")) {
                     call.respond(File("packs/$pack/$version/manifest.json").reader().readText())
                 }
@@ -71,6 +76,7 @@ fun main(args: Array<String>) {
                 var version = call.parameters["version"]
 
                 when (version) {
+                    // Dynamically pick versions
                     "experimental" -> {
                         call.respondRedirect("${conf.packs.get(pack)}/archive/master.zip", true)
                     }
@@ -78,12 +84,15 @@ fun main(args: Array<String>) {
                         version = File("packs/$pack").listFiles().map { it.name }.sortedDescending().first()
                     }
                 }
+
+                // Create zip
                 if (call.assertFound("packs/$pack/$version")) {
                     val baos = ByteArrayOutputStream()
                     val zipfile = ZipOutputStream(baos)
 
                     File("packs/$pack/$version/").walk().forEach {
                         if (!it.isDirectory) {
+                            // Add each file with relative path
                             val path = it.path.replace("\\", "/").substringAfter("$version/")
                             zipfile.putNextEntry(ZipEntry(path))
                             zipfile.write(it.readBytes())
@@ -92,12 +101,14 @@ fun main(args: Array<String>) {
                     }
 
                     zipfile.close()
+                    // Send zip to client
                     call.respondBytes(baos.toByteArray())
                 }
             }
 
             // Github updates
             post("/github") {
+                // Update from github when the webhook POSTs
                 if (verifier.validate(call)) {
                     val text = call.receiveText()
                     val json = JSONObject(text)
@@ -107,16 +118,13 @@ fun main(args: Array<String>) {
                         val version = release["tag_name"]
                         val branch = release["target_commitish"]
                         val name = repo["name"]
+                        // Download zip
                         val zip = DownloadManager.downloadZip("${repo["html_url"]}/archive/$branch.zip")
                         var ze: ZipEntry? = zip.nextEntry
                         while (ze != null) {
-                            println("Unzipping " + ze.name)
+                            // Extract all files
                             val out = FileOutputStream("packs/$name/$version/${ze.name}")
-                            var c = zip.read()
-                            while (c != -1) {
-                                out.write(c)
-                                c = zip.read()
-                            }
+                            zip.copyTo(out)
                             zip.closeEntry()
                             out.close()
                             ze = zip.nextEntry

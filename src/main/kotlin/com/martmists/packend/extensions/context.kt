@@ -6,7 +6,10 @@ import io.ktor.response.respond
 import java.io.File
 
 suspend fun ApplicationCall.assertFound(path: String): Boolean {
+    // Verify a path exists, raise 404 if not
+
     var p = path
+    // Filter out `..` for security
     while (p.contains(".."))
         p = p.replace("..", ".")
     val e = File(p).exists()
