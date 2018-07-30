@@ -116,26 +116,30 @@ fun main(args: Array<String>) {
                         val repo = json.repository
                         val version = release["tag_name"]
                         val name = repo["name"]
-                        // Download zip
-                        val url = "${repo["html_url"]}/archive/$version.zip"
-                        val zip = DownloadManager.downloadZip(url)
 
-                        File("packs/$name/$version").mkdirs()
-                        var ze: ZipEntry? = zip.nextEntry
+                        // Only use repos that are in the config
+                        if (conf.packs.containsKey(repo["name"])) {
+                            // Download zip
+                            val url = "${repo["html_url"]}/archive/$version.zip"
+                            val zip = DownloadManager.downloadZip(url)
 
-                        while (ze != null) {
-                            // Extract all files
-                            if (!ze.isDirectory and !conf.blacklisted.containsFile(ze.name)) {
-                                val out = File("packs/$name/$version/${ze.name.substringAfter("$version/")}")
-                                out.mkdirs()
-                                out.delete()
-                                zip.copyTo(out.outputStream())
+                            File("packs/$name/$version").mkdirs()
+                            var ze: ZipEntry? = zip.nextEntry
+
+                            while (ze != null) {
+                                // Extract all files
+                                if (!ze.isDirectory and !conf.blacklisted.containsFile(ze.name)) {
+                                    val out = File("packs/$name/$version/${ze.name.substringAfter("$version/")}")
+                                    out.mkdirs()
+                                    out.delete()
+                                    zip.copyTo(out.outputStream())
+                                }
+
+                                zip.closeEntry()
+                                ze = zip.nextEntry
                             }
-
-                            zip.closeEntry()
-                            ze = zip.nextEntry
+                            zip.close()
                         }
-                        zip.close()
                     }
                     call.respond(HttpStatusCode.OK)
                 }
