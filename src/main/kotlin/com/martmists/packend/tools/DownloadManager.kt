@@ -18,7 +18,6 @@ object DownloadManager {
 
     fun downloadZip(url: String): ZipInputStream {
         val response = get(url)
-        print(response.code().toString())
         return ZipInputStream(response.body()!!.byteStream())
     }
 }
