@@ -148,7 +148,7 @@ fun main(args: Array<String>) {
                             "name" to it.name,
                             "title" to it.name.replace("-", " "),
                             "version" to latest,
-                            "location" to "packs/${it.name}/pack.json",
+                            "location" to "packs/${it.name}/manifest.json",
                             "priority" to 1
                     ))
                 }
