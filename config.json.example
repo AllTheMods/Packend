@@ -2,7 +2,9 @@
   "key": "tester",
   "packs": {
     "ATM-3": "https://github.com/AllTheMods/ATM-3",
-    "Remix": "https://github.com/AllTheMods/Remix"
+    "Remix": "https://github.com/AllTheMods/Remix",
+    "ATM3-Expert": "https://github.com/AllTheMods/ATM3-Expert",
+    "ATM3-Lite": "https://github.com/AllTheMods/ATM3-Lite"
   },
   "blacklisted": [
     ".git/",
