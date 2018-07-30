@@ -3,8 +3,10 @@ package com.martmists.packend
 import com.fasterxml.jackson.core.util.DefaultIndenter
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
 import com.fasterxml.jackson.databind.SerializationFeature
+import com.google.gson.Gson
 import com.martmists.packend.extensions.assertFound
 import com.martmists.packend.extensions.containsFile
+import com.martmists.packend.tools.DownloadManager
 import com.martmists.packend.tools.Verify
 import io.ktor.application.call
 import io.ktor.application.install
@@ -20,7 +22,6 @@ import io.ktor.routing.post
 import io.ktor.routing.routing
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
-import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.zip.ZipEntry
@@ -28,8 +29,7 @@ import java.util.zip.ZipOutputStream
 
 
 fun main(args: Array<String>) {
-    val jsonc = JSONObject(File("config.json").readText())
-    val conf = Config(jsonc["key"] as String, jsonc["packs"] as JSONObject, jsonc["blacklisted"] as List<String>)
+    val conf = Gson().fromJson(File("config.json").readText(), Config::class.java)
     val verifier = Verify(conf.key)
 
     embeddedServer(Netty, 80) {
@@ -78,7 +78,7 @@ fun main(args: Array<String>) {
                 when (version) {
                     // Dynamically pick versions
                     "experimental" -> {
-                        call.respondRedirect("${conf.packs.get(pack)}/archive/master.zip", true)
+                        call.respondRedirect("${conf.packs[pack]}/archive/master.zip", true)
                     }
                     "latest" -> {
                         version = File("packs/$pack").listFiles().map { it.name }.sortedDescending().first()
@@ -111,10 +111,10 @@ fun main(args: Array<String>) {
                 val text = call.receiveText()
                 println(text)
                 if (verifier.validate(call.request.headers["X-Hub-Signature"] ?: "", text)) {
-                    val json = JSONObject(text)
                     if (call.request.headers["X-GitHub-Event"] == "release") {
-                        val release = json["release"] as JSONObject
-                        val repo = json["repository"] as JSONObject
+                        val json = Gson().fromJson(text, Release::class.java)
+                        val release = json.release
+                        val repo = json.repository
                         val version = release["tag_name"]
                         val name = repo["name"]
                         // Download zip
@@ -139,8 +139,8 @@ fun main(args: Array<String>) {
                         }
                         zip.close()
                     }
+                    call.respond(HttpStatusCode.OK)
                 }
-                call.respond(HttpStatusCode.OK)
             }
         }
     }.start(wait = true)
