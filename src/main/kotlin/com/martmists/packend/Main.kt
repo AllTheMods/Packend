@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.util.DefaultIndenter
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.martmists.packend.extensions.assertFound
+import com.martmists.packend.extensions.containsFile
 import com.martmists.packend.tools.Verify
 import io.ktor.application.call
 import io.ktor.application.install
@@ -22,14 +23,13 @@ import io.ktor.server.netty.Netty
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.io.FileOutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 
 fun main(args: Array<String>) {
     val jsonc = JSONObject(File("config.json").readText())
-    val conf = Config(jsonc["key"] as String, jsonc["packs"] as JSONObject)
+    val conf = Config(jsonc["key"] as String, jsonc["packs"] as JSONObject, jsonc["blacklisted"] as List<String>)
     val verifier = Verify(conf.key)
 
     embeddedServer(Netty, 80) {
@@ -108,25 +108,33 @@ fun main(args: Array<String>) {
 
             // Github updates
             post("/github") {
-                // Update from github when the webhook POSTs
-                if (verifier.validate(call)) {
-                    val text = call.receiveText()
+                val text = call.receiveText()
+                println(text)
+                if (verifier.validate(call.request.headers["X-Hub-Signature"] ?: "", text)) {
                     val json = JSONObject(text)
-                    if (json["action"] == "published") {
+                    if (call.request.headers["X-GitHub-Event"] == "release") {
                         val release = json["release"] as JSONObject
                         val repo = json["repository"] as JSONObject
                         val version = release["tag_name"]
-                        val branch = release["target_commitish"]
                         val name = repo["name"]
                         // Download zip
-                        val zip = DownloadManager.downloadZip("${repo["html_url"]}/archive/$branch.zip")
+                        val url = "${repo["html_url"]}/archive/$version.zip"
+                        val zip = DownloadManager.downloadZip(url)
+
+                        File("packs/$name/$version").mkdirs()
                         var ze: ZipEntry? = zip.nextEntry
+
                         while (ze != null) {
+                            println(ze.name.substringAfter("$version/"))
                             // Extract all files
-                            val out = FileOutputStream("packs/$name/$version/${ze.name}")
-                            zip.copyTo(out)
+                            if (!ze.isDirectory and !conf.blacklisted.containsFile(ze.name)) {
+                                val out = File("packs/$name/$version/${ze.name.substringAfter("$version/")}")
+                                out.mkdirs()
+                                out.delete()
+                                zip.copyTo(out.outputStream())
+                            }
+
                             zip.closeEntry()
-                            out.close()
                             ze = zip.nextEntry
                         }
                         zip.close()
@@ -134,7 +142,6 @@ fun main(args: Array<String>) {
                 }
                 call.respond(HttpStatusCode.OK)
             }
-
         }
     }.start(wait = true)
 }

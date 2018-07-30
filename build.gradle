@@ -36,7 +36,7 @@ dependencies {
     compile "io.ktor:ktor-jackson:$ktor_version"
     compile 'org.json:json:20180130'
     compile 'com.squareup.okhttp3:okhttp:3.10.0'
-    compile 'junit:junit:4.12'
+    compile "ch.qos.logback:logback-classic:1.2.1"
 }
 
 kotlin {

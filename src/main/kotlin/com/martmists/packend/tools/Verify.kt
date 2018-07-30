@@ -17,10 +17,9 @@ class Verify(key: String) {
         return DatatypeConverter.printHexBinary(hash)
     }
 
-    suspend fun validate(call: ApplicationCall): Boolean {
+    fun validate(key: String, text: String): Boolean {
         // Verify a request was sent by github using our secret
-        val other = call.request.headers["X-Hub-Signature"] ?: return false
-        val me = "sha1=" + hexdigest(call.receiveText())
-        return me.toLowerCase() == other.toLowerCase()
+        val me = "sha1=" + hexdigest(text)
+        return me.toLowerCase() == key.toLowerCase()
     }
 }

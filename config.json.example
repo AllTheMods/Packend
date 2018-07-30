@@ -3,5 +3,15 @@
   "packs": {
     "ATM-3": "https://github.com/AllTheMods/ATM-3",
     "ATM-Remix": "https://github.com/AllTheMods/Remix"
-  }
+  },
+  "blacklisted": [
+    ".git/",
+    "changelogs_detail/",
+    ".gitattributes",
+    ".gitignore",
+    "changelog.md",
+    "contributing.md",
+    "issue_template.md",
+    "readme.md"
+  ]
 }
