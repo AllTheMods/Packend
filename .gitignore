@@ -5,3 +5,5 @@ gradle/
 *.iml
 packs/
 out/
+packs/
+config.json

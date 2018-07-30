@@ -32,7 +32,7 @@ fun main(args: Array<String>) {
     val conf = Config(jsonc["key"] as String, jsonc["packs"] as JSONObject)
     val verifier = Verify(conf.key)
 
-    embeddedServer(Netty, 4000) {
+    embeddedServer(Netty, 80) {
         install(ContentNegotiation) {
             // JSON output
             jackson {
