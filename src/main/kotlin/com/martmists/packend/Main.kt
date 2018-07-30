@@ -45,6 +45,8 @@ fun main(args: Array<String>) {
         }
 
         routing {
+
+            // Indexing
             get("/api/packs") {
                 // Return all packs
                 val packs = File("packs").listFiles().map { it.name }
@@ -56,21 +58,13 @@ fun main(args: Array<String>) {
 
                 // Return all versions of a pack
                 if (call.assertFound("packs/$pack")) {
-                    val packs = File("packs/$pack").listFiles().map { it.name } + listOf("latest", "experimental")
-                    call.respond(mapOf("versions" to packs))
+                    val versions = File("packs/$pack").listFiles()
+                    val versions_full = versions.map { it.name } + listOf("latest", "experimental")
+                    call.respond(mapOf("versions" to versions_full))
                 }
             }
 
-            get("/api/{pack}/{version}/manifest") {
-                val pack = call.parameters["pack"]
-                val version = call.parameters["version"]
-
-                // Return Manifest file for selected pack and version
-                if (call.assertFound("packs/$pack/$version")) {
-                    call.respond(File("packs/$pack/$version/manifest.json").reader().readText())
-                }
-            }
-
+            // Downloads
             get("/api/{pack}/{version}/modpack.zip") {
                 val pack = call.parameters["pack"]
                 var version = call.parameters["version"]
@@ -143,6 +137,40 @@ fun main(args: Array<String>) {
                     }
                     call.respond(HttpStatusCode.OK)
                 }
+            }
+
+            // SKCraft Launcher Integration
+            get("/api/packs.json"){
+                val packs = mutableListOf<Map<String, Any>>()
+                File("packs").listFiles().forEach {
+                    val latest = File("packs/${it.name}").listFiles().map { it.name }.sortedDescending().first()
+                    packs.add(mapOf(
+                            "name" to it.name,
+                            "title" to it.name.replace("-", " "),
+                            "version" to latest,
+                            "location" to "packs/${it.name}/pack.json",
+                            "priority" to 1
+                    ))
+                }
+
+                call.respond(mapOf("minimumVersion" to 1, "packages" to packs.toTypedArray()))
+            }
+
+            get("/api/packs/{pack}/{version}/manifest.json"){
+                val pack = call.parameters["pack"]
+                val version = call.parameters["version"]
+
+                if (call.assertFound("packs/$pack/$version")){
+                    call.respond(File("packs/$pack/$version/manifest.json").readText())
+                }
+            }
+
+            get("/api/news.html"){
+                call.respond(File("news.html").readText())
+            }
+
+            get("/api/launcher.json"){
+                TODO("Not Implemented")
             }
         }
     }.start(wait = true)
