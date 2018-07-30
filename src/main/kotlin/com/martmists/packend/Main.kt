@@ -109,7 +109,6 @@ fun main(args: Array<String>) {
             // Github updates
             post("/github") {
                 val text = call.receiveText()
-                println(text)
                 if (verifier.validate(call.request.headers["X-Hub-Signature"] ?: "", text)) {
                     if (call.request.headers["X-GitHub-Event"] == "release") {
                         val json = Gson().fromJson(text, Release::class.java)
@@ -125,7 +124,6 @@ fun main(args: Array<String>) {
                         var ze: ZipEntry? = zip.nextEntry
 
                         while (ze != null) {
-                            println(ze.name.substringAfter("$version/"))
                             // Extract all files
                             if (!ze.isDirectory and !conf.blacklisted.containsFile(ze.name)) {
                                 val out = File("packs/$name/$version/${ze.name.substringAfter("$version/")}")
