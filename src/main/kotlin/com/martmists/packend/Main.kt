@@ -32,7 +32,7 @@ fun main(args: Array<String>) {
     val conf = Gson().fromJson(File("config.json").readText(), Config::class.java)
     val verifier = Verify(conf.key)
 
-    embeddedServer(Netty, 80) {
+    embeddedServer(Netty, conf.port) {
         install(ContentNegotiation) {
             // JSON output
             jackson {

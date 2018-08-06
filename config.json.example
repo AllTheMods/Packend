@@ -1,5 +1,6 @@
 {
   "key": "tester",
+  "port": 4444,
   "packs": {
     "ATM-3": "https://github.com/AllTheMods/ATM-3",
     "Remix": "https://github.com/AllTheMods/Remix",
